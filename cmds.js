@@ -243,7 +243,7 @@ var cuenta = 1;
 	    const playOne = ()=> {
 			if ( toBeResolved.length == 0){
 				log("No hay nada más que preguntar.");
-				log(`Fin del examen. Aciertos: ${score}`),
+				log(`Fin del juego. Aciertos: ${score}`),
 				biglog(score, 'blue');
 				rl.prompt();
 			}else{
@@ -258,11 +258,11 @@ var cuenta = 1;
 						console.log(a);
 						if ( a.toLocaleLowerCase() === quiz.answer.toLocaleLowerCase()){
 							score++;
-							log(`CORRECTO - Lleva ${score} aciertos`); 
+							log(`CORRECTO - Lleva ${score} aciertos.`); 
 							toBeResolved.splice(rand,1);
 							playOne();
 						}else{
-							log('INCORRECTO');
+							log('INCORRECTO.');
 							log(`Fin del juego. Aciertos: ${score}`);
 							biglog(score,'yellow');
 							rl.prompt();
