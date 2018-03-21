@@ -41,6 +41,7 @@ exports.quitCmd = (socket,rl) => {
      rl.close();
      socket.end();
      rl.prompt();
+     
 };
 
 /*
@@ -232,55 +233,69 @@ exports.testCmd = (socket, rl,id) => {
 
 exports.playCmd = (socket,rl) => {
 
-var cuenta = 1;
-	var toBeResolved = [];
-	var score = 0;
-	models.quiz.findAll()
-    .each(quiz => {
-		toBeResolved[cuenta-1] = cuenta;
-		cuenta = cuenta +1 ;
-    })
-    .then(() => {
-	    const playOne = ()=> {
-			if ( toBeResolved.length == 0){
-				log(socket, "No hay nada más que preguntar.");
-				log(socket, `Fin del juego. Aciertos: ${score}`),
-				biglog(socket, score, 'blue');
-				rl.prompt();
-			}else{
-				let rand = Math.trunc(Math.random()*toBeResolved.length);
-				let id = toBeResolved[rand];
-				validateId(id)
-				.then(id => models.quiz.findById(id))
-				.then(quiz => {
-					pregunta = quiz.question;
-					makeQuestion(rl, pregunta + '?')
-					.then(a => {
-						socket.write(a);
-						if ( a.toLocaleLowerCase() === quiz.answer.toLocaleLowerCase()){
-							score++;
-							log(socket, `CORRECTO - Lleva ${score} aciertos.`); 
-							toBeResolved.splice(rand,1);
-							playOne();
-						}else{
-							log(socket, 'INCORRECTO.');
-							log(socket, `Fin del juego. Aciertos: ${score}`);
-							biglog(socket, score,'yellow');
-							rl.prompt();
-						}
-					});
-				})
-				.catch(error => {
-					errorlog(socket, error.message);
-				})
-				.then(() => {
-					rl.prompt();
-				});
-			}
-	    }
-	    playOne();
-    });    
+
+     let score = 0;
+    let toBeResolved = [];
+    let todasPreguntas = [];
+    models.quiz.findAll()
+        .each(result => {
+            todasPreguntas.push(result);
+        })
+        .then(() => {
+
+            for (let i = 0; i < todasPreguntas.length; i++) {
+
+                toBeResolved.push(i);
+            }
+
+
+            const playOne = () => {
+
+
+                if (toBeResolved.length === 0) {
+                    log(socket, ' Ya ha respondido a todas las preguntas ', 'green');
+                    log(socket, ' Fin del examen. Aciertos:')
+                    biglog(socket, `${score}`, "magenta");
+                    rl.prompt();
+
+                } else {
+
+                    let idAzar = Math.floor(Math.random() * (toBeResolved.length));
+                    const pregunta = todasPreguntas[toBeResolved[idAzar]];
+                    toBeResolved.splice(idAzar, 1);                    
+                    rl.question(colorize(`${pregunta.question}` + '? ', 'red'), answer => {
+
+                        if (answer.trim().toLowerCase() === pregunta.answer.toLowerCase()) {
+                            score = score + 1;
+                            log(socket, ` ${colorize('CORRECTO', 'green')} - Lleva ${colorize(score, 'green')} aciertos`);
+                            playOne();
+
+                        } else {
+                            log(socket, ' INCORRECTO', 'red');
+                            log(socket, ' Fin del examen. Aciertos:')
+                            biglog(socket, `${score}`, "magenta");
+                            rl.prompt();
+                        }
+                    });
+                }
+            }
+            playOne();
+
+        })
+        .catch(Sequelize.ValidationError, error => {
+            errorlog(socket, 'El quiz es erroneo:');
+            error.errors.forEach(({ message }) => errorlog(socket, message));
+        })
+        .catch(error => {
+            errorlog(socket, error.message);
+        })
+        .then(() => {
+            rl.prompt();
+        });
 };
+                   
+
+				
                                    
                         
                         
